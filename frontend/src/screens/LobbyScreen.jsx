@@ -35,7 +35,7 @@ export default function LobbyScreen({ user, onLogout, onCreate, onJoin, error })
   return (
     <main className="screen">
       <header className="topbar">
-        <h1>Oyun Salonu</h1>
+        <h1>🃏 Oyun Salonu</h1>
         <div className="topbar-right">
           <span>Merhaba, {user.name}</span>
           <button className="button button-ghost" onClick={onLogout}>Çıkış yap</button>

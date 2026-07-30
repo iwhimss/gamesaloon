@@ -10,8 +10,8 @@ export default function LoginScreen({ onLogin, error }) {
 
   return (
     <main className="screen screen-center">
-      <div className="card">
-        <h1>Oyun Salonu</h1>
+      <div className="card card-wide">
+        <h1>🃏 Oyun Salonu</h1>
         <p className="subtitle">Oynamaya başlamak için isminizi girin.</p>
         <form onSubmit={handleSubmit} className="stack">
           <input
