@@ -5,6 +5,7 @@ import { Server } from 'socket.io';
 import { config } from './config/index.js';
 import { healthRouter } from './routes/health.js';
 import { guestRouter } from './routes/guest.js';
+import { tablesRouter } from './routes/tables.js';
 import { registerSockets } from './sockets/index.js';
 
 const app = express();
@@ -12,6 +13,7 @@ app.use(cors());
 app.use(express.json());
 app.use(healthRouter);
 app.use(guestRouter);
+app.use(tablesRouter);
 
 const httpServer = http.createServer(app);
 const io = new Server(httpServer, { cors: { origin: '*' } });

@@ -1,35 +1,43 @@
 import { useEffect, useRef, useState } from 'react';
 import { io } from 'socket.io-client';
 import { guestLogin, BACKEND_URL } from './api/client';
+import LoginScreen from './screens/LoginScreen';
+import LobbyScreen from './screens/LobbyScreen';
+import TableScreen from './screens/TableScreen';
 import './App.css';
 
 export default function App() {
-  const [name, setName] = useState('');
   const [user, setUser] = useState(() => {
     const saved = localStorage.getItem('gamesaloon_user');
     return saved ? JSON.parse(saved) : null;
   });
   const [connected, setConnected] = useState(false);
+  const [room, setRoom] = useState(null);
   const [error, setError] = useState('');
   const socketRef = useRef(null);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) return undefined;
 
     const socket = io(BACKEND_URL, { auth: { token: user.token } });
     socketRef.current = socket;
 
     socket.on('connect', () => setConnected(true));
-    socket.on('disconnect', () => setConnected(false));
+    socket.on('disconnect', () => {
+      setConnected(false);
+      setRoom(null);
+    });
     socket.on('connect_error', (err) => setError(err.message));
+    socket.on('room:state', (state) => setRoom(state));
 
-    return () => socket.disconnect();
+    return () => {
+      socket.disconnect();
+      socketRef.current = null;
+    };
   }, [user]);
 
-  async function handleLogin(e) {
-    e.preventDefault();
+  async function handleLogin(name) {
     setError('');
-
     try {
       const { token, user: guestUser } = await guestLogin(name);
       const stored = { ...guestUser, token };
@@ -44,39 +52,59 @@ export default function App() {
     localStorage.removeItem('gamesaloon_user');
     socketRef.current?.disconnect();
     setUser(null);
+    setRoom(null);
     setConnected(false);
   }
 
+  function emitWithAck(event, payload) {
+    return new Promise((resolve) => {
+      setError('');
+      socketRef.current?.emit(event, payload, (response) => {
+        if (!response?.ok) setError(response?.error ?? 'Bir hata oluştu');
+        else setRoom(response.room ?? room);
+        resolve(response);
+      });
+    });
+  }
+
+  function handleCreateTable(payload) {
+    return emitWithAck('room:create', payload);
+  }
+
+  function handleJoinTable(payload) {
+    return emitWithAck('room:join', payload);
+  }
+
+  function handleLeaveTable() {
+    socketRef.current?.emit('room:leave', {}, () => setRoom(null));
+  }
+
   if (!user) {
+    return <LoginScreen onLogin={handleLogin} error={error} />;
+  }
+
+  if (!connected) {
     return (
-      <main className="app">
-        <h1>Oyun Salonu</h1>
-        <form onSubmit={handleLogin}>
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="İsminizi girin"
-            maxLength={32}
-          />
-          <button type="submit">Misafir olarak gir</button>
-        </form>
-        {error && <p className="error">{error}</p>}
+      <main className="screen screen-center">
+        <div className="card">
+          <p className="subtitle">Sunucuya bağlanılıyor...</p>
+          {error && <p className="error-text">{error}</p>}
+        </div>
       </main>
     );
   }
 
+  if (room) {
+    return <TableScreen room={room} user={user} onLeave={handleLeaveTable} />;
+  }
+
   return (
-    <main className="app">
-      <h1>Oyun Salonu</h1>
-      <p>Hoş geldin, {user.name}</p>
-      <p>
-        Sunucu bağlantısı:{' '}
-        <span className={connected ? 'status-ok' : 'status-down'}>
-          {connected ? 'Bağlandı' : 'Bağlantı yok'}
-        </span>
-      </p>
-      {error && <p className="error">{error}</p>}
-      <button onClick={handleLogout}>Çıkış yap</button>
-    </main>
+    <LobbyScreen
+      user={user}
+      onLogout={handleLogout}
+      onCreate={handleCreateTable}
+      onJoin={handleJoinTable}
+      error={error}
+    />
   );
 }
