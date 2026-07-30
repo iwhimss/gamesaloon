@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
-    "migrate": "node -r dotenv/config ./node_modules/.bin/node-pg-migrate"
+    "migrate": "node-pg-migrate"
   },
   "dependencies": {
     "cors": "^2.8.5",

@@ -1,0 +1,40 @@
+.app {
+  max-width: 480px;
+  margin: 4rem auto;
+  padding: 2rem;
+  text-align: center;
+  font-family: system-ui, sans-serif;
+}
+
+.app form {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.app input {
+  padding: 0.5rem;
+  font-size: 1rem;
+}
+
+.app button {
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.status-ok {
+  color: #16a34a;
+  font-weight: 600;
+}
+
+.status-down {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.error {
+  color: #dc2626;
+  margin-top: 1rem;
+}
