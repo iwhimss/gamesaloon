@@ -1,11 +1,15 @@
+import { createRequire } from 'node:module';
 import { Router } from 'express';
 import { checkDbConnection } from '../db/pool.js';
 import { checkRedisConnection } from '../db/redis.js';
 
+const require = createRequire(import.meta.url);
+const { version: packageVersion } = require('../../package.json');
+
 export const healthRouter = Router();
 
 healthRouter.get('/health', async (_req, res) => {
-  const status = { status: 'ok', version: process.env.npm_package_version ?? '0.0.1', uptime: process.uptime() };
+  const status = { status: 'ok', version: packageVersion, uptime: process.uptime() };
 
   try {
     await checkDbConnection();
