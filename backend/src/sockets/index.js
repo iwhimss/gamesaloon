@@ -1,5 +1,6 @@
 import { verifyToken } from '../middleware/auth.js';
 import { registerRoomHandlers } from '../rooms/handlers.js';
+import { registerHostHandlers } from '../rooms/hostHandlers.js';
 
 export function registerSockets(io) {
   io.use((socket, next) => {
@@ -21,6 +22,7 @@ export function registerSockets(io) {
     console.log(`[socket] bağlandı: ${socket.data.user.name} (${socket.id})`);
 
     registerRoomHandlers(io, socket);
+    registerHostHandlers(io, socket);
 
     socket.on('disconnect', (reason) => {
       console.log(`[socket] ayrıldı: ${socket.data.user.name} (${reason})`);

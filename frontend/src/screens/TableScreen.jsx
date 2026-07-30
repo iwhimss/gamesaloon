@@ -1,5 +1,14 @@
-export default function TableScreen({ room, user, onLeave }) {
+import { useState } from 'react';
+
+export default function TableScreen({ room, user, onLeave, onKick, onChangePassword, onTransferHost, error }) {
   const isHost = room.hostUserId === user.id;
+  const [newPassword, setNewPassword] = useState('');
+
+  function submitPasswordChange(e) {
+    e.preventDefault();
+    onChangePassword(newPassword.trim() || undefined);
+    setNewPassword('');
+  }
 
   return (
     <main className="screen screen-center">
@@ -15,6 +24,8 @@ export default function TableScreen({ room, user, onLeave }) {
           <button className="button button-ghost" onClick={onLeave}>Masadan ayrıl</button>
         </div>
 
+        {error && <p className="error-text">{error}</p>}
+
         <ul className="player-list">
           {room.players.map((p) => (
             <li key={p.userId} className="player-list-item">
@@ -24,12 +35,34 @@ export default function TableScreen({ room, user, onLeave }) {
               <span className={p.connected ? 'status-ok' : 'status-down'}>
                 {p.connected ? 'Bağlı' : 'Bağlı değil'}
               </span>
+              {isHost && p.userId !== user.id && (
+                <span className="player-actions">
+                  <button className="button button-secondary" onClick={() => onTransferHost(p.userId)}>Host yap</button>
+                  <button className="button button-danger" onClick={() => onKick(p.userId)}>At</button>
+                </span>
+              )}
             </li>
           ))}
         </ul>
 
+        {isHost && (
+          <form onSubmit={submitPasswordChange} className="stack host-panel">
+            <label className="field-label" htmlFor="table-password">Masa şifresi</label>
+            <div className="inline-form">
+              <input
+                id="table-password"
+                className="input"
+                placeholder="Yeni şifre (boş bırakınca şifre kaldırılır)"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+              />
+              <button className="button button-secondary" type="submit">Güncelle</button>
+            </div>
+          </form>
+        )}
+
         {isHost ? (
-          <p className="subtitle">Tüm oyuncular hazır olduğunda oyunu başlatabilirsin.</p>
+          <p className="subtitle">Tüm oyuncular hazır olduğunda oyunu başlatabilirsin. (Okey motoru yakında eklenecek)</p>
         ) : (
           <p className="subtitle">Host'un oyunu başlatması bekleniyor...</p>
         )}

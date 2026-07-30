@@ -163,3 +163,36 @@ body {
   color: #dc2626;
   font-weight: 600;
 }
+
+.player-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.button-danger {
+  background: #fee2e2;
+  color: #b91c1c;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.9rem;
+}
+
+.host-panel {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+.field-label {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.inline-form {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.inline-form .input {
+  flex: 1;
+}

@@ -8,6 +8,10 @@ import { guestRouter } from './routes/guest.js';
 import { tablesRouter } from './routes/tables.js';
 import { registerSockets } from './sockets/index.js';
 
+process.on('unhandledRejection', (err) => {
+  console.error('[unhandledRejection]', err);
+});
+
 const app = express();
 app.use(cors());
 app.use(express.json());

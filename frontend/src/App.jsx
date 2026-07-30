@@ -29,6 +29,10 @@ export default function App() {
     });
     socket.on('connect_error', (err) => setError(err.message));
     socket.on('room:state', (state) => setRoom(state));
+    socket.on('room:kicked', () => {
+      setRoom(null);
+      setError('Masadan çıkarıldınız');
+    });
 
     return () => {
       socket.disconnect();
@@ -79,6 +83,18 @@ export default function App() {
     socketRef.current?.emit('room:leave', {}, () => setRoom(null));
   }
 
+  function handleKick(targetUserId) {
+    return emitWithAck('host:kick', { targetUserId });
+  }
+
+  function handleChangePassword(password) {
+    return emitWithAck('host:changePassword', { password });
+  }
+
+  function handleTransferHost(targetUserId) {
+    return emitWithAck('host:transfer', { targetUserId });
+  }
+
   if (!user) {
     return <LoginScreen onLogin={handleLogin} error={error} />;
   }
@@ -95,7 +111,17 @@ export default function App() {
   }
 
   if (room) {
-    return <TableScreen room={room} user={user} onLeave={handleLeaveTable} />;
+    return (
+      <TableScreen
+        room={room}
+        user={user}
+        onLeave={handleLeaveTable}
+        onKick={handleKick}
+        onChangePassword={handleChangePassword}
+        onTransferHost={handleTransferHost}
+        error={error}
+      />
+    );
   }
 
   return (
