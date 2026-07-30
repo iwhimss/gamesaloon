@@ -5,12 +5,13 @@ const HAND_SIZE = 14;
 const POINTS_PER_LOSER = 10;
 
 export function createGame(playerIds) {
-  let deck = shuffle(createDeck());
+  const deck = shuffle(createDeck());
 
-  let indicatorTile;
-  do {
+  let indicatorTile = deck.pop();
+  while (indicatorTile.isFakeOkey) {
+    deck.unshift(indicatorTile);
     indicatorTile = deck.pop();
-  } while (indicatorTile.isFakeOkey);
+  }
 
   const okeyTile = computeOkeyTile(indicatorTile);
 

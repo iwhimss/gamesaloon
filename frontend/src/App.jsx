@@ -4,6 +4,8 @@ import { guestLogin, BACKEND_URL } from './api/client';
 import LoginScreen from './screens/LoginScreen';
 import LobbyScreen from './screens/LobbyScreen';
 import TableScreen from './screens/TableScreen';
+import GameScreen from './screens/GameScreen';
+import HandEndScreen from './screens/HandEndScreen';
 import './App.css';
 
 export default function App() {
@@ -13,6 +15,8 @@ export default function App() {
   });
   const [connected, setConnected] = useState(false);
   const [room, setRoom] = useState(null);
+  const [game, setGame] = useState(null);
+  const [handResult, setHandResult] = useState(null);
   const [error, setError] = useState('');
   const socketRef = useRef(null);
 
@@ -26,12 +30,22 @@ export default function App() {
     socket.on('disconnect', () => {
       setConnected(false);
       setRoom(null);
+      setGame(null);
     });
     socket.on('connect_error', (err) => setError(err.message));
-    socket.on('room:state', (state) => setRoom(state));
+    socket.on('room:state', (state) => {
+      setRoom(state);
+      if (state.status !== 'oynanıyor') setGame(null);
+    });
     socket.on('room:kicked', () => {
       setRoom(null);
+      setGame(null);
       setError('Masadan çıkarıldınız');
+    });
+    socket.on('game:state', (state) => setGame(state));
+    socket.on('game:handEnded', (result) => {
+      setHandResult(result);
+      setGame(null);
     });
 
     return () => {
@@ -57,6 +71,7 @@ export default function App() {
     socketRef.current?.disconnect();
     setUser(null);
     setRoom(null);
+    setGame(null);
     setConnected(false);
   }
 
@@ -80,7 +95,10 @@ export default function App() {
   }
 
   function handleLeaveTable() {
-    socketRef.current?.emit('room:leave', {}, () => setRoom(null));
+    socketRef.current?.emit('room:leave', {}, () => {
+      setRoom(null);
+      setGame(null);
+    });
   }
 
   function handleKick(targetUserId) {
@@ -93,6 +111,35 @@ export default function App() {
 
   function handleTransferHost(targetUserId) {
     return emitWithAck('host:transfer', { targetUserId });
+  }
+
+  function handleStartGame() {
+    return emitWithAck('game:start', {});
+  }
+
+  function handleDraw(source) {
+    setError('');
+    socketRef.current?.emit('game:action', { type: 'draw', payload: { source } }, (response) => {
+      if (!response?.ok) setError(response?.error ?? 'İşlem başarısız');
+    });
+  }
+
+  function handleDiscard(tileId) {
+    setError('');
+    socketRef.current?.emit('game:action', { type: 'discard', payload: { tileId } }, (response) => {
+      if (!response?.ok) setError(response?.error ?? 'İşlem başarısız');
+    });
+  }
+
+  function handleFinishHand() {
+    setError('');
+    socketRef.current?.emit('game:action', { type: 'finishHand', payload: {} }, (response) => {
+      if (!response?.ok) setError(response?.error ?? 'İşlem başarısız');
+    });
+  }
+
+  function dismissHandResult() {
+    setHandResult(null);
   }
 
   if (!user) {
@@ -110,6 +157,25 @@ export default function App() {
     );
   }
 
+  if (handResult && room) {
+    return <HandEndScreen result={handResult} room={room} user={user} onContinue={dismissHandResult} />;
+  }
+
+  if (room && room.status === 'oynanıyor' && game) {
+    return (
+      <GameScreen
+        game={game}
+        room={room}
+        user={user}
+        onDraw={handleDraw}
+        onDiscard={handleDiscard}
+        onFinishHand={handleFinishHand}
+        onLeave={handleLeaveTable}
+        error={error}
+      />
+    );
+  }
+
   if (room) {
     return (
       <TableScreen
@@ -119,6 +185,7 @@ export default function App() {
         onKick={handleKick}
         onChangePassword={handleChangePassword}
         onTransferHost={handleTransferHost}
+        onStartGame={handleStartGame}
         error={error}
       />
     );

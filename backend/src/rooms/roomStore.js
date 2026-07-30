@@ -31,6 +31,8 @@ export function createRoomState({ code, gameType, maxPlayers, hostUserId, hostNa
       { userId: hostUserId, name: hostName, seatNo: 1, connected: true },
     ],
     game: null,
+    sessionScores: {},
+    handCount: 0,
     createdAt: new Date().toISOString(),
   };
 }
@@ -44,5 +46,7 @@ export function publicRoomState(room) {
     hostUserId: room.hostUserId,
     passwordProtected: room.passwordProtected,
     players: room.players.map(({ userId, name, seatNo, connected }) => ({ userId, name, seatNo, connected })),
+    sessionScores: room.sessionScores ?? {},
+    handCount: room.handCount ?? 0,
   };
 }

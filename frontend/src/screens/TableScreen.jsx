@@ -1,7 +1,8 @@
 import { useState } from 'react';
 
-export default function TableScreen({ room, user, onLeave, onKick, onChangePassword, onTransferHost, error }) {
+export default function TableScreen({ room, user, onLeave, onKick, onChangePassword, onTransferHost, onStartGame, error }) {
   const isHost = room.hostUserId === user.id;
+  const isFull = room.players.length === room.maxPlayers;
   const [newPassword, setNewPassword] = useState('');
 
   function submitPasswordChange(e) {
@@ -62,11 +63,33 @@ export default function TableScreen({ room, user, onLeave, onKick, onChangePassw
         )}
 
         {isHost ? (
-          <p className="subtitle">Tüm oyuncular hazır olduğunda oyunu başlatabilirsin. (Okey motoru yakında eklenecek)</p>
+          <>
+            <button className="button button-primary" onClick={onStartGame} disabled={!isFull}>
+              {room.handCount > 0 ? 'Yeni El Başlat' : 'Oyunu Başlat'}
+            </button>
+            {!isFull && <p className="subtitle">Oyunu başlatmak için masanın dolu olması gerekir (4 oyuncu).</p>}
+          </>
         ) : (
           <p className="subtitle">Host'un oyunu başlatması bekleniyor...</p>
         )}
       </div>
+
+      {room.handCount > 0 && (
+        <div className="card card-wide">
+          <h2>Oturum skor tablosu ({room.handCount} el oynandı)</h2>
+          <ul className="player-list">
+            {room.players.map((p) => (
+              <li key={p.userId} className="player-list-item">
+                <span>{p.name}</span>
+                {p.userId === user.id && <span className="badge badge-muted">Sen</span>}
+                <span className={(room.sessionScores[p.userId] ?? 0) >= 0 ? 'status-ok' : 'status-down'}>
+                  {(room.sessionScores[p.userId] ?? 0) >= 0 ? '+' : ''}{room.sessionScores[p.userId] ?? 0}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </main>
   );
 }

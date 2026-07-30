@@ -87,7 +87,18 @@ export function registerGameHandlers(io, socket) {
         const scores = room.game.winnerId ? calculateScore(room.game) : {};
         await persistHandResult(room, scores).catch((err) => console.error('[persistHandResult]', err));
 
-        io.to(room.code).emit('game:handEnded', { winnerId: room.game.winnerId, scores, draw: !room.game.winnerId });
+        room.sessionScores = room.sessionScores ?? {};
+        for (const [userId, score] of Object.entries(scores)) {
+          room.sessionScores[userId] = (room.sessionScores[userId] ?? 0) + score;
+        }
+        room.handCount = (room.handCount ?? 0) + 1;
+
+        io.to(room.code).emit('game:handEnded', {
+          winnerId: room.game.winnerId,
+          scores,
+          draw: !room.game.winnerId,
+          sessionScores: room.sessionScores,
+        });
 
         room.status = 'bekleniyor';
         room.game = null;
