@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { pool } from '../db/pool.js';
+import { getGameDefinition, isSupportedGameType } from '../games/registry.js';
 import { getRoom, publicRoomState, saveRoom } from './roomStore.js';
 
 function fail(callback, message) {
@@ -91,6 +92,37 @@ export function registerHostHandlers(io, socket) {
       await broadcastRoomState(io, room);
     } catch (err) {
       console.error('[host:rename]', err);
+      fail(callback, 'İşlem başarısız');
+    }
+  });
+
+  socket.on('host:changeGameType', async ({ gameType } = {}, callback) => {
+    try {
+      const room = await loadOwnRoom();
+      if (!room) return fail(callback, 'Bir masada değilsiniz');
+      if (room.hostUserId !== user.sub) return fail(callback, 'Sadece host bu işlemi yapabilir');
+      if (room.status !== 'bekleniyor') return fail(callback, 'Oyun başladıktan sonra oyun tipi değiştirilemez');
+      if (!isSupportedGameType(gameType)) return fail(callback, 'Desteklenmeyen oyun tipi');
+
+      const definition = getGameDefinition(gameType);
+      if (room.players.length > definition.maxPlayers) {
+        return fail(callback, `Bu oyun en fazla ${definition.maxPlayers} oyuncu ile oynanır, önce oyuncu çıkarın`);
+      }
+
+      await pool.query('UPDATE tables SET game_type = $1, max_players = $2 WHERE code = $3', [
+        gameType,
+        definition.maxPlayers,
+        room.code,
+      ]);
+
+      room.gameType = gameType;
+      room.maxPlayers = definition.maxPlayers;
+      await saveRoom(room);
+
+      callback?.({ ok: true });
+      await broadcastRoomState(io, room);
+    } catch (err) {
+      console.error('[host:changeGameType]', err);
       fail(callback, 'İşlem başarısız');
     }
   });

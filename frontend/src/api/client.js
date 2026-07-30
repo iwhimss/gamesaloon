@@ -26,4 +26,8 @@ export function fetchTables(token) {
   return request('/tables', { token });
 }
 
+export function fetchGames() {
+  return request('/games');
+}
+
 export { BACKEND_URL };

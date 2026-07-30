@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
-import { fetchTables } from '../api/client';
+import { fetchGames, fetchTables } from '../api/client';
 
 export default function LobbyScreen({ user, onLogout, onCreate, onJoin, error }) {
   const [tables, setTables] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [games, setGames] = useState([]);
   const [createName, setCreateName] = useState('');
+  const [createGameType, setCreateGameType] = useState('okey');
   const [createPassword, setCreatePassword] = useState('');
   const [joinCode, setJoinCode] = useState('');
   const [joinPassword, setJoinPassword] = useState('');
@@ -21,11 +23,17 @@ export default function LobbyScreen({ user, onLogout, onCreate, onJoin, error })
 
   useEffect(() => {
     loadTables();
+    fetchGames().then((data) => {
+      setGames(data);
+      if (data[0]) setCreateGameType(data[0].id);
+    });
   }, []);
+
+  const selectedGame = games.find((g) => g.id === createGameType);
 
   function handleCreate(e) {
     e.preventDefault();
-    onCreate({ name: createName.trim() || undefined, gameType: 'okey', password: createPassword.trim() || undefined });
+    onCreate({ name: createName.trim() || undefined, gameType: createGameType, password: createPassword.trim() || undefined });
   }
 
   function handleJoin(e) {
@@ -48,8 +56,19 @@ export default function LobbyScreen({ user, onLogout, onCreate, onJoin, error })
       <section className="grid">
         <div className="card">
           <h2>Yeni masa kur</h2>
-          <p className="subtitle">Okey masası — 4 oyuncu.</p>
+          <p className="subtitle">
+            {selectedGame ? `${selectedGame.label} — ${selectedGame.maxPlayers} oyuncu` : 'Yükleniyor...'}
+          </p>
           <form onSubmit={handleCreate} className="stack">
+            <select
+              className="input"
+              value={createGameType}
+              onChange={(e) => setCreateGameType(e.target.value)}
+            >
+              {games.map((g) => (
+                <option key={g.id} value={g.id}>{g.label}</option>
+              ))}
+            </select>
             <input
               className="input"
               type="text"

@@ -1,9 +1,8 @@
 import bcrypt from 'bcryptjs';
 import { pool } from '../db/pool.js';
+import { getGameDefinition, isSupportedGameType } from '../games/registry.js';
 import { generateUniqueRoomCode } from './codeGenerator.js';
 import { createRoomState, deleteRoom, getRoom, publicRoomState, saveRoom } from './roomStore.js';
-
-const SUPPORTED_GAME_TYPES = ['okey'];
 
 function fail(callback, message) {
   callback?.({ ok: false, error: message });
@@ -21,12 +20,12 @@ async function closeTable(code) {
 export function registerRoomHandlers(io, socket) {
   const user = socket.data.user;
 
-  socket.on('room:create', async ({ name, gameType, password, maxPlayers } = {}, callback) => {
-    if (!SUPPORTED_GAME_TYPES.includes(gameType)) {
+  socket.on('room:create', async ({ name, gameType, password } = {}, callback) => {
+    if (!isSupportedGameType(gameType)) {
       return fail(callback, 'Desteklenmeyen oyun tipi');
     }
 
-    const players = gameType === 'okey' ? 4 : maxPlayers;
+    const players = getGameDefinition(gameType).maxPlayers;
     const tableName = String(name ?? '').trim().slice(0, 64) || null;
 
     try {

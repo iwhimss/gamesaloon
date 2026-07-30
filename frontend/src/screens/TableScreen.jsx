@@ -1,10 +1,17 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { fetchGames } from '../api/client';
 
-export default function TableScreen({ room, user, onLeave, onKick, onChangePassword, onTransferHost, onRename, onStartGame, error }) {
+export default function TableScreen({ room, user, onLeave, onKick, onChangePassword, onTransferHost, onRename, onChangeGameType, onStartGame, error }) {
   const isHost = room.hostUserId === user.id;
   const isFull = room.players.length === room.maxPlayers;
   const [newPassword, setNewPassword] = useState('');
   const [newName, setNewName] = useState(room.name);
+  const [games, setGames] = useState([]);
+  const [selectedGameType, setSelectedGameType] = useState(room.gameType);
+
+  useEffect(() => {
+    fetchGames().then(setGames);
+  }, []);
 
   function submitPasswordChange(e) {
     e.preventDefault();
@@ -15,6 +22,11 @@ export default function TableScreen({ room, user, onLeave, onKick, onChangePassw
   function submitRename(e) {
     e.preventDefault();
     onRename(newName.trim() || undefined);
+  }
+
+  function submitGameType(e) {
+    e.preventDefault();
+    onChangeGameType(selectedGameType);
   }
 
   return (
@@ -63,6 +75,25 @@ export default function TableScreen({ room, user, onLeave, onKick, onChangePassw
                 onChange={(e) => setNewName(e.target.value)}
                 maxLength={64}
               />
+              <button className="button button-secondary" type="submit">Güncelle</button>
+            </div>
+          </form>
+        )}
+
+        {isHost && games.length > 1 && (
+          <form onSubmit={submitGameType} className="stack host-panel">
+            <label className="field-label" htmlFor="table-game-type">Oyun tipi</label>
+            <div className="inline-form">
+              <select
+                id="table-game-type"
+                className="input"
+                value={selectedGameType}
+                onChange={(e) => setSelectedGameType(e.target.value)}
+              >
+                {games.map((g) => (
+                  <option key={g.id} value={g.id}>{g.label}</option>
+                ))}
+              </select>
               <button className="button button-secondary" type="submit">Güncelle</button>
             </div>
           </form>

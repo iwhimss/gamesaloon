@@ -117,6 +117,10 @@ export default function App() {
     return emitWithAck('host:rename', { name });
   }
 
+  function handleChangeGameType(gameType) {
+    return emitWithAck('host:changeGameType', { gameType });
+  }
+
   function handleStartGame() {
     return emitWithAck('game:start', {});
   }
@@ -190,6 +194,7 @@ export default function App() {
         onChangePassword={handleChangePassword}
         onTransferHost={handleTransferHost}
         onRename={handleRename}
+        onChangeGameType={handleChangeGameType}
         onStartGame={handleStartGame}
         error={error}
       />
