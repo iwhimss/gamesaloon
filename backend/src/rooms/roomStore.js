@@ -19,9 +19,10 @@ export async function deleteRoom(code) {
   await redis.del(key(code));
 }
 
-export function createRoomState({ code, gameType, maxPlayers, hostUserId, hostName, passwordProtected }) {
+export function createRoomState({ code, name, gameType, maxPlayers, hostUserId, hostName, passwordProtected }) {
   return {
     code,
+    name: name || `Masa #${code}`,
     gameType,
     status: 'bekleniyor',
     maxPlayers,
@@ -40,6 +41,7 @@ export function createRoomState({ code, gameType, maxPlayers, hostUserId, hostNa
 export function publicRoomState(room) {
   return {
     code: room.code,
+    name: room.name ?? `Masa #${room.code}`,
     gameType: room.gameType,
     status: room.status,
     maxPlayers: room.maxPlayers,

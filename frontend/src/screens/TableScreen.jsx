@@ -1,9 +1,10 @@
 import { useState } from 'react';
 
-export default function TableScreen({ room, user, onLeave, onKick, onChangePassword, onTransferHost, onStartGame, error }) {
+export default function TableScreen({ room, user, onLeave, onKick, onChangePassword, onTransferHost, onRename, onStartGame, error }) {
   const isHost = room.hostUserId === user.id;
   const isFull = room.players.length === room.maxPlayers;
   const [newPassword, setNewPassword] = useState('');
+  const [newName, setNewName] = useState(room.name);
 
   function submitPasswordChange(e) {
     e.preventDefault();
@@ -11,14 +12,19 @@ export default function TableScreen({ room, user, onLeave, onKick, onChangePassw
     setNewPassword('');
   }
 
+  function submitRename(e) {
+    e.preventDefault();
+    onRename(newName.trim() || undefined);
+  }
+
   return (
     <main className="screen screen-center">
       <div className="card card-wide">
         <div className="topbar">
           <div>
-            <h1>Masa {room.code}</h1>
+            <h1>{room.name}</h1>
             <p className="subtitle">
-              {room.gameType === 'okey' ? 'Okey' : room.gameType} · {room.players.length}/{room.maxPlayers} oyuncu
+              Masa kodu: <strong>{room.code}</strong> · {room.gameType === 'okey' ? 'Okey' : room.gameType} · {room.players.length}/{room.maxPlayers} oyuncu
               {room.passwordProtected ? ' · 🔒 Şifreli' : ''}
             </p>
           </div>
@@ -45,6 +51,22 @@ export default function TableScreen({ room, user, onLeave, onKick, onChangePassw
             </li>
           ))}
         </ul>
+
+        {isHost && (
+          <form onSubmit={submitRename} className="stack host-panel">
+            <label className="field-label" htmlFor="table-name">Masa adı</label>
+            <div className="inline-form">
+              <input
+                id="table-name"
+                className="input"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                maxLength={64}
+              />
+              <button className="button button-secondary" type="submit">Güncelle</button>
+            </div>
+          </form>
+        )}
 
         {isHost && (
           <form onSubmit={submitPasswordChange} className="stack host-panel">

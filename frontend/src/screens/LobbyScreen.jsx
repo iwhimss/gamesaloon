@@ -4,6 +4,7 @@ import { fetchTables } from '../api/client';
 export default function LobbyScreen({ user, onLogout, onCreate, onJoin, error }) {
   const [tables, setTables] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [createName, setCreateName] = useState('');
   const [createPassword, setCreatePassword] = useState('');
   const [joinCode, setJoinCode] = useState('');
   const [joinPassword, setJoinPassword] = useState('');
@@ -24,7 +25,7 @@ export default function LobbyScreen({ user, onLogout, onCreate, onJoin, error })
 
   function handleCreate(e) {
     e.preventDefault();
-    onCreate({ gameType: 'okey', password: createPassword.trim() || undefined });
+    onCreate({ name: createName.trim() || undefined, gameType: 'okey', password: createPassword.trim() || undefined });
   }
 
   function handleJoin(e) {
@@ -49,6 +50,14 @@ export default function LobbyScreen({ user, onLogout, onCreate, onJoin, error })
           <h2>Yeni masa kur</h2>
           <p className="subtitle">Okey masası — 4 oyuncu.</p>
           <form onSubmit={handleCreate} className="stack">
+            <input
+              className="input"
+              type="text"
+              placeholder="Masa adı (opsiyonel)"
+              value={createName}
+              onChange={(e) => setCreateName(e.target.value)}
+              maxLength={64}
+            />
             <input
               className="input"
               type="text"
@@ -94,6 +103,7 @@ export default function LobbyScreen({ user, onLogout, onCreate, onJoin, error })
         <ul className="table-list">
           {tables.map((t) => (
             <li key={t.code} className="table-list-item">
+              <span className="table-name">{t.name}</span>
               <span className="table-code">{t.code}</span>
               <span>{t.gameType === 'okey' ? 'Okey' : t.gameType}</span>
               <span>{t.playerCount}/{t.maxPlayers} oyuncu</span>

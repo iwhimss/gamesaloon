@@ -75,6 +75,26 @@ export function registerHostHandlers(io, socket) {
     }
   });
 
+  socket.on('host:rename', async ({ name } = {}, callback) => {
+    try {
+      const room = await loadOwnRoom();
+      if (!room) return fail(callback, 'Bir masada değilsiniz');
+      if (room.hostUserId !== user.sub) return fail(callback, 'Sadece host bu işlemi yapabilir');
+
+      const tableName = String(name ?? '').trim().slice(0, 64) || `Masa #${room.code}`;
+      await pool.query('UPDATE tables SET name = $1 WHERE code = $2', [tableName, room.code]);
+
+      room.name = tableName;
+      await saveRoom(room);
+
+      callback?.({ ok: true });
+      await broadcastRoomState(io, room);
+    } catch (err) {
+      console.error('[host:rename]', err);
+      fail(callback, 'İşlem başarısız');
+    }
+  });
+
   socket.on('host:transfer', async ({ targetUserId } = {}, callback) => {
     try {
       const room = await loadOwnRoom();

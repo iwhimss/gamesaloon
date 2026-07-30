@@ -21,21 +21,22 @@ async function closeTable(code) {
 export function registerRoomHandlers(io, socket) {
   const user = socket.data.user;
 
-  socket.on('room:create', async ({ gameType, password, maxPlayers } = {}, callback) => {
+  socket.on('room:create', async ({ name, gameType, password, maxPlayers } = {}, callback) => {
     if (!SUPPORTED_GAME_TYPES.includes(gameType)) {
       return fail(callback, 'Desteklenmeyen oyun tipi');
     }
 
     const players = gameType === 'okey' ? 4 : maxPlayers;
+    const tableName = String(name ?? '').trim().slice(0, 64) || null;
 
     try {
       const code = await generateUniqueRoomCode();
       const passwordHash = password ? await bcrypt.hash(password, 10) : null;
 
       const { rows } = await pool.query(
-        `INSERT INTO tables (code, password_hash, host_user_id, game_type, status, max_players)
-         VALUES ($1, $2, $3, $4, 'bekleniyor', $5) RETURNING id`,
-        [code, passwordHash, user.sub, gameType, players],
+        `INSERT INTO tables (code, name, password_hash, host_user_id, game_type, status, max_players)
+         VALUES ($1, $2, $3, $4, $5, 'bekleniyor', $6) RETURNING id`,
+        [code, tableName, passwordHash, user.sub, gameType, players],
       );
       await pool.query(
         `INSERT INTO table_players (table_id, user_id, seat_no) VALUES ($1, $2, 1)
@@ -45,6 +46,7 @@ export function registerRoomHandlers(io, socket) {
 
       const room = createRoomState({
         code,
+        name: tableName,
         gameType,
         maxPlayers: players,
         hostUserId: user.sub,

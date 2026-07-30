@@ -210,10 +210,16 @@ h2 {
   border-bottom: none;
 }
 
+.table-name {
+  font-weight: 700;
+  flex: 1 1 160px;
+}
+
 .table-code {
   font-weight: 700;
   letter-spacing: 0.05em;
   font-size: 1.05rem;
+  color: var(--color-text-muted);
 }
 
 .player-list {

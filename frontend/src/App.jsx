@@ -113,6 +113,10 @@ export default function App() {
     return emitWithAck('host:transfer', { targetUserId });
   }
 
+  function handleRename(name) {
+    return emitWithAck('host:rename', { name });
+  }
+
   function handleStartGame() {
     return emitWithAck('game:start', {});
   }
@@ -185,6 +189,7 @@ export default function App() {
         onKick={handleKick}
         onChangePassword={handleChangePassword}
         onTransferHost={handleTransferHost}
+        onRename={handleRename}
         onStartGame={handleStartGame}
         error={error}
       />

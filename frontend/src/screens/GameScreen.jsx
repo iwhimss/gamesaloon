@@ -40,7 +40,7 @@ export default function GameScreen({ game, room, user, onDraw, onDiscard, onFini
   return (
     <main className="screen">
       <div className="topbar">
-        <h1>Masa {room.code}</h1>
+        <h1>{room.name}</h1>
         <button className="button button-ghost" onClick={onLeave}>Masadan ayrıl</button>
       </div>
 

@@ -7,7 +7,7 @@ export const tablesRouter = Router();
 tablesRouter.get('/tables', requireAuth, async (_req, res) => {
   try {
     const { rows } = await pool.query(`
-      SELECT t.code, t.game_type, t.status, t.max_players, (t.password_hash IS NOT NULL) AS password_protected,
+      SELECT t.code, t.name, t.game_type, t.status, t.max_players, (t.password_hash IS NOT NULL) AS password_protected,
              COUNT(tp.user_id) FILTER (WHERE tp.left_at IS NULL) AS player_count
       FROM tables t
       LEFT JOIN table_players tp ON tp.table_id = t.id
@@ -18,6 +18,7 @@ tablesRouter.get('/tables', requireAuth, async (_req, res) => {
 
     res.json(rows.map((row) => ({
       code: row.code,
+      name: row.name ?? `Masa #${row.code}`,
       gameType: row.game_type,
       status: row.status,
       maxPlayers: row.max_players,
