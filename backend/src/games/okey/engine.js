@@ -61,7 +61,7 @@ export function handleAction(state, playerId, action) {
 
     if (source === 'discard') {
       if (state.discardPile.length === 0) return { ok: false, error: 'Atılan taş yığını boş' };
-      hand.push(state.discardPile.pop());
+      hand.push(state.discardPile.pop().tile);
     } else {
       if (state.drawPile.length === 0) {
         state.status = 'bitti';
@@ -85,7 +85,7 @@ export function handleAction(state, playerId, action) {
     if (index === -1) return { ok: false, error: 'Bu taş elinizde yok' };
 
     const [tile] = hand.splice(index, 1);
-    state.discardPile.push(tile);
+    state.discardPile.push({ tile, by: playerId });
 
     state.currentPlayerIndex = (state.currentPlayerIndex + 1) % state.playerOrder.length;
     state.turnPhase = 'draw';
@@ -131,6 +131,8 @@ export function calculateScore(state) {
 }
 
 export function getStateForPlayer(state, playerId) {
+  const lastDiscard = state.discardPile[state.discardPile.length - 1] ?? null;
+
   return {
     status: state.status,
     currentPlayerId: currentPlayerId(state),
@@ -138,7 +140,8 @@ export function getStateForPlayer(state, playerId) {
     indicatorTile: state.indicatorTile,
     okeyTile: state.okeyTile,
     drawPileCount: state.drawPile.length,
-    topDiscard: state.discardPile[state.discardPile.length - 1] ?? null,
+    topDiscard: lastDiscard?.tile ?? null,
+    lastDiscardBy: lastDiscard?.by ?? null,
     discardCount: state.discardPile.length,
     players: state.playerOrder.map((id) => ({ userId: id, tileCount: state.hands[id].length })),
     hand: state.hands[playerId] ?? [],

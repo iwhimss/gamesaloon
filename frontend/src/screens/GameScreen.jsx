@@ -1,5 +1,8 @@
 import { useMemo, useState } from 'react';
 import Tile from '../components/Tile';
+import Mascot from '../components/Mascot';
+import PlayerSeat from '../components/PlayerSeat';
+import { assignSeats } from '../lib/seatLayout';
 
 export default function GameScreen({ game, room, user, onDraw, onDiscard, onFinishHand, onLeave, error }) {
   const [selectedTileId, setSelectedTileId] = useState(null);
@@ -9,6 +12,13 @@ export default function GameScreen({ game, room, user, onDraw, onDiscard, onFini
     for (const p of room.players) map[p.userId] = p.name;
     return map;
   }, [room.players]);
+
+  const seatPlayers = useMemo(
+    () => game.players.map((p) => ({ ...p, name: nameByUserId[p.userId] ?? '—' })),
+    [game.players, nameByUserId],
+  );
+
+  const seats = useMemo(() => assignSeats(seatPlayers, user.id), [seatPlayers, user.id]);
 
   const isMyTurn = game.currentPlayerId === user.id;
   const canDraw = isMyTurn && game.turnPhase === 'draw';
@@ -26,6 +36,11 @@ export default function GameScreen({ game, room, user, onDraw, onDiscard, onFini
     setSelectedTileId(null);
   }
 
+  function discardTileFor(seatPlayer) {
+    if (!seatPlayer || !game.topDiscard || game.lastDiscardBy !== seatPlayer.userId) return null;
+    return game.topDiscard;
+  }
+
   if (game.status === 'bitti') {
     return (
       <main className="screen screen-center">
@@ -38,7 +53,7 @@ export default function GameScreen({ game, room, user, onDraw, onDiscard, onFini
   }
 
   return (
-    <main className="screen">
+    <main className="screen game-screen">
       <div className="topbar">
         <h1>{room.name}</h1>
         <button className="button button-ghost" onClick={onLeave}>Masadan ayrıl</button>
@@ -46,39 +61,44 @@ export default function GameScreen({ game, room, user, onDraw, onDiscard, onFini
 
       {error && <p className="error-text">{error}</p>}
 
-      <section className="card">
-        <div className="game-info">
-          <div>
-            <span className="field-label">Gösterge</span>
-            <Tile tile={game.indicatorTile} />
-          </div>
-          <div>
-            <span className="field-label">Okey taşı</span>
-            <Tile tile={game.okeyTile} />
-          </div>
-          <div>
-            <span className="field-label">Yığın</span>
-            <p>{game.drawPileCount} taş kaldı</p>
-          </div>
+      <div className="table-scene">
+        <div className="seat seat-top">
+          <PlayerSeat player={seats.top} isTurn={game.currentPlayerId === seats.top?.userId} discardTile={discardTileFor(seats.top)} />
+        </div>
+        <div className="seat seat-left">
+          <PlayerSeat player={seats.left} isTurn={game.currentPlayerId === seats.left?.userId} discardTile={discardTileFor(seats.left)} />
+        </div>
+        <div className="seat seat-right">
+          <PlayerSeat player={seats.right} isTurn={game.currentPlayerId === seats.right?.userId} discardTile={discardTileFor(seats.right)} />
         </div>
 
-        <ul className="player-list">
-          {game.players.map((p) => (
-            <li key={p.userId} className={`player-list-item${game.currentPlayerId === p.userId ? ' player-turn' : ''}`}>
-              <span>{nameByUserId[p.userId] ?? '—'}</span>
-              {p.userId === user.id && <span className="badge badge-muted">Sen</span>}
-              <span className="subtitle">{p.tileCount} taş</span>
-              {game.currentPlayerId === p.userId && <span className="badge">Sırası</span>}
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section className="card">
-        <h2>Atılan taşlar</h2>
-        <div className="discard-pile">
-          {game.topDiscard ? <Tile tile={game.topDiscard} /> : <p className="subtitle">Henüz taş atılmadı</p>}
+        <div className="round-table">
+          <div className="table-center">
+            <div className="table-center-tiles">
+              <div className="table-center-tile">
+                <span className="field-label">Gösterge</span>
+                <Tile tile={game.indicatorTile} />
+              </div>
+              <div className="table-center-tile">
+                <span className="field-label">Okey</span>
+                <Tile tile={game.okeyTile} />
+              </div>
+            </div>
+            <p className="table-center-count">{game.drawPileCount} taş kaldı</p>
+          </div>
         </div>
+      </div>
+
+      <section className="card own-area">
+        <div className="own-area-header">
+          <Mascot userId={user.id} name={user.name} isTurn={isMyTurn} size={48} />
+          {isMyTurn ? (
+            <span className="badge">Sıra sende</span>
+          ) : (
+            <span className="subtitle">Sıra {nameByUserId[game.currentPlayerId] ?? 'diğer oyuncuda'}.</span>
+          )}
+        </div>
+
         {canDraw && (
           <div className="stack-row">
             <button className="button button-primary" onClick={() => onDraw('pile')}>Yığından çek</button>
@@ -91,11 +111,7 @@ export default function GameScreen({ game, room, user, onDraw, onDiscard, onFini
             </button>
           </div>
         )}
-        {!isMyTurn && <p className="subtitle">Sıra {nameByUserId[game.currentPlayerId] ?? 'diğer oyuncuda'}.</p>}
-      </section>
 
-      <section className="card">
-        <h2>Elin</h2>
         <div className="hand">
           {sortedHand.map((tile) => (
             <Tile
@@ -106,6 +122,7 @@ export default function GameScreen({ game, room, user, onDraw, onDiscard, onFini
             />
           ))}
         </div>
+
         {canDiscardOrFinish && (
           <div className="stack-row">
             <button className="button button-primary" onClick={handleDiscard} disabled={!selectedTileId}>
