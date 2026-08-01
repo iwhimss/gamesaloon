@@ -4,7 +4,9 @@ import { computeOkeyTile, isWinningHand } from './rules.js';
 const HAND_SIZE = 14;
 const POINTS_PER_LOSER = 10;
 
-export function createGame(playerIds) {
+const DEFAULT_TURN_DURATION_SECONDS = 30;
+
+export function createGame(playerIds, turnDurationSeconds = DEFAULT_TURN_DURATION_SECONDS) {
   const deck = shuffle(createDeck());
 
   let indicatorTile = deck.pop();
@@ -32,6 +34,8 @@ export function createGame(playerIds) {
     hands,
     winnerId: null,
     finishedAt: null,
+    turnDurationSeconds,
+    turnDeadline: Date.now() + turnDurationSeconds * 1000,
   };
 }
 
@@ -89,6 +93,7 @@ export function handleAction(state, playerId, action) {
 
     state.currentPlayerIndex = (state.currentPlayerIndex + 1) % state.playerOrder.length;
     state.turnPhase = 'draw';
+    state.turnDeadline = Date.now() + state.turnDurationSeconds * 1000;
     return { ok: true };
   }
 
@@ -140,6 +145,8 @@ export function getStateForPlayer(state, playerId) {
     indicatorTile: state.indicatorTile,
     okeyTile: state.okeyTile,
     drawPileCount: state.drawPile.length,
+    turnDeadline: state.turnDeadline,
+    turnDurationSeconds: state.turnDurationSeconds,
     topDiscard: lastDiscard?.tile ?? null,
     lastDiscardBy: lastDiscard?.by ?? null,
     discardCount: state.discardPile.length,

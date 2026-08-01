@@ -123,3 +123,37 @@ function isGroupHand(tiles, okeyTile) {
 export function isWinningHand(tiles, okeyTile) {
   return isPairHand(tiles, okeyTile) || isGroupHand(tiles, okeyTile);
 }
+
+function neighborScore(tile, hand, okeyTile) {
+  let score = 0;
+  for (const other of hand) {
+    if (other.id === tile.id || isJokerTile(other, okeyTile)) continue;
+    if (other.color === tile.color && other.number === tile.number) score += 2;
+    else if (other.color === tile.color && Math.abs(other.number - tile.number) === 1) score += 1;
+    else if (other.number === tile.number && other.color !== tile.color) score += 1;
+  }
+  return score;
+}
+
+/**
+ * Süre dolunca otomatik atılacak taşı seçer: elin geri kalanıyla en az
+ * "komşuluğu" olan (grup/seri potansiyeli en düşük) taş atılır. Okey ve
+ * sahte okey taşları asla otomatik atılmaz.
+ */
+export function chooseAutoDiscardTile(hand, okeyTile) {
+  const candidates = hand.filter((t) => !isJokerTile(t, okeyTile));
+  const pool = candidates.length > 0 ? candidates : hand;
+
+  let best = pool[0];
+  let bestScore = neighborScore(best, hand, okeyTile);
+
+  for (const tile of pool.slice(1)) {
+    const score = neighborScore(tile, hand, okeyTile);
+    if (score < bestScore) {
+      best = tile;
+      bestScore = score;
+    }
+  }
+
+  return best;
+}

@@ -151,6 +151,10 @@ export default function App() {
     return emitWithAck('host:changeGameType', { gameType });
   }
 
+  function handleChangeTurnDuration(seconds) {
+    return emitWithAck('host:changeTurnDuration', { seconds });
+  }
+
   function handleStartGame() {
     return emitWithAck('game:start', {});
   }
@@ -232,6 +236,7 @@ export default function App() {
         onTransferHost={handleTransferHost}
         onRename={handleRename}
         onChangeGameType={handleChangeGameType}
+        onChangeTurnDuration={handleChangeTurnDuration}
         onStartGame={handleStartGame}
         onOpenSettings={() => setShowSettings(true)}
         error={error}

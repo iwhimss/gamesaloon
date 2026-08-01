@@ -1,4 +1,4 @@
-import { isWinningHand, computeOkeyTile } from './rules.js';
+import { isWinningHand, computeOkeyTile, chooseAutoDiscardTile } from './rules.js';
 
 function t(color, number) {
   return { id: `${color}-${number}-${Math.random()}`, color, number, isFakeOkey: false };
@@ -74,3 +74,14 @@ const hand6 = [
   t('siyah', 9),
 ];
 console.log('Test 6 (okey esi joker/cift):', isWinningHand(hand6, okeyTile) === true ? 'PASS' : 'FAIL');
+
+// Test 7: otomatik atma - izole (komsusuz) tas secilmeli, okey asla secilmemeli
+const isolatedTile = t('siyah', 11);
+const hand7 = [
+  t('kirmizi', 1), t('kirmizi', 2), t('kirmizi', 3), // seri, komsulu
+  t('sari', 7), t('sari', 7), // es cift
+  isolatedTile, // komsusuz tek tas
+  { id: 'okey-tas', color: okeyTile.color, number: okeyTile.number, isFakeOkey: false }, // okey esi (joker), asla secilmemeli
+];
+const chosen = chooseAutoDiscardTile(hand7, okeyTile);
+console.log('Test 7 (otomatik atma izole tas):', chosen.id === isolatedTile.id ? 'PASS' : `FAIL (secilen: ${chosen.color}-${chosen.number})`);

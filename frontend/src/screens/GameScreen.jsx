@@ -65,6 +65,23 @@ export default function GameScreen({ game, room, user, onDraw, onDiscard, onFini
 
   const seats = useMemo(() => assignSeats(seatPlayers, user.id), [seatPlayers, user.id]);
 
+  const [remainingSeconds, setRemainingSeconds] = useState(null);
+
+  useEffect(() => {
+    if (!game.turnDeadline) {
+      setRemainingSeconds(null);
+      return undefined;
+    }
+
+    function tick() {
+      setRemainingSeconds(Math.max(0, Math.round((game.turnDeadline - Date.now()) / 1000)));
+    }
+
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [game.turnDeadline]);
+
   const isMyTurn = game.currentPlayerId === user.id;
   const canDraw = isMyTurn && game.turnPhase === 'draw';
   const canDiscardOrFinish = isMyTurn && game.turnPhase === 'discard';
@@ -184,6 +201,11 @@ export default function GameScreen({ game, room, user, onDraw, onDiscard, onFini
               <span className="badge">Sıra sende</span>
             ) : (
               <span className="subtitle">Sıra {nameByUserId[game.currentPlayerId] ?? 'diğer oyuncuda'}.</span>
+            )}
+            {remainingSeconds != null && (
+              <span className={`turn-timer${remainingSeconds <= 5 ? ' turn-timer-urgent' : ''}`}>
+                ⏱ {remainingSeconds}s
+              </span>
             )}
           </div>
 

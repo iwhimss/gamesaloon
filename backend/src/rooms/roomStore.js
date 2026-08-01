@@ -44,6 +44,7 @@ export function createRoomState({ code, name, gameType, maxPlayers, hostUserId, 
     game: null,
     sessionScores: {},
     handCount: 0,
+    turnDurationSeconds: 30,
     createdAt: new Date().toISOString(),
   };
 }
@@ -60,5 +61,6 @@ export function publicRoomState(room) {
     players: room.players.map(({ userId, name, seatNo, connected }) => ({ userId, name, seatNo, connected })),
     sessionScores: room.sessionScores ?? {},
     handCount: room.handCount ?? 0,
+    turnDurationSeconds: room.turnDurationSeconds ?? 30,
   };
 }

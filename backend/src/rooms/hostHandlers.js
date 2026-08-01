@@ -3,6 +3,8 @@ import { pool } from '../db/pool.js';
 import { getGameDefinition, isSupportedGameType } from '../games/registry.js';
 import { getRoom, publicRoomState, saveRoom, touchActivity } from './roomStore.js';
 
+const TURN_DURATION_OPTIONS = [20, 30, 45, 60];
+
 function fail(callback, message) {
   callback?.({ ok: false, error: message });
 }
@@ -95,6 +97,26 @@ export function registerHostHandlers(io, socket) {
       await broadcastRoomState(io, room);
     } catch (err) {
       console.error('[host:rename]', err);
+      fail(callback, 'İşlem başarısız');
+    }
+  });
+
+  socket.on('host:changeTurnDuration', async ({ seconds } = {}, callback) => {
+    try {
+      const room = await loadOwnRoom();
+      if (!room) return fail(callback, 'Bir masada değilsiniz');
+      if (room.hostUserId !== user.sub) return fail(callback, 'Sadece host bu işlemi yapabilir');
+      if (room.status !== 'bekleniyor') return fail(callback, 'Oyun başladıktan sonra hamle süresi değiştirilemez');
+      if (!TURN_DURATION_OPTIONS.includes(seconds)) return fail(callback, 'Geçersiz hamle süresi');
+
+      room.turnDurationSeconds = seconds;
+      await saveRoom(room);
+      await touchActivity(room.code);
+
+      callback?.({ ok: true });
+      await broadcastRoomState(io, room);
+    } catch (err) {
+      console.error('[host:changeTurnDuration]', err);
       fail(callback, 'İşlem başarısız');
     }
   });

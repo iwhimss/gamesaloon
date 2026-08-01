@@ -600,6 +600,16 @@ h2 {
   flex-wrap: wrap;
 }
 
+.turn-timer {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted);
+}
+
+.turn-timer-urgent {
+  color: var(--color-danger);
+}
+
 @media (max-width: 640px) {
   html {
     font-size: 16px;

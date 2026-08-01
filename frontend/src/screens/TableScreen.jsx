@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react';
 import { fetchGames } from '../api/client';
 
-export default function TableScreen({ room, user, onLeave, onKick, onChangePassword, onTransferHost, onRename, onChangeGameType, onStartGame, onOpenSettings, error }) {
+const TURN_DURATION_OPTIONS = [20, 30, 45, 60];
+
+export default function TableScreen({ room, user, onLeave, onKick, onChangePassword, onTransferHost, onRename, onChangeGameType, onChangeTurnDuration, onStartGame, onOpenSettings, error }) {
   const isHost = room.hostUserId === user.id;
   const isFull = room.players.length === room.maxPlayers;
   const [newPassword, setNewPassword] = useState('');
   const [newName, setNewName] = useState(room.name);
   const [games, setGames] = useState([]);
   const [selectedGameType, setSelectedGameType] = useState(room.gameType);
+  const [selectedTurnDuration, setSelectedTurnDuration] = useState(room.turnDurationSeconds ?? 30);
 
   useEffect(() => {
     fetchGames().then(setGames);
@@ -27,6 +30,11 @@ export default function TableScreen({ room, user, onLeave, onKick, onChangePassw
   function submitGameType(e) {
     e.preventDefault();
     onChangeGameType(selectedGameType);
+  }
+
+  function submitTurnDuration(e) {
+    e.preventDefault();
+    onChangeTurnDuration(Number(selectedTurnDuration));
   }
 
   return (
@@ -99,6 +107,26 @@ export default function TableScreen({ room, user, onLeave, onKick, onChangePassw
               </select>
               <button className="button button-secondary" type="submit">Güncelle</button>
             </div>
+          </form>
+        )}
+
+        {isHost && (
+          <form onSubmit={submitTurnDuration} className="stack host-panel">
+            <label className="field-label" htmlFor="table-turn-duration">Hamle süresi</label>
+            <div className="inline-form">
+              <select
+                id="table-turn-duration"
+                className="input"
+                value={selectedTurnDuration}
+                onChange={(e) => setSelectedTurnDuration(e.target.value)}
+              >
+                {TURN_DURATION_OPTIONS.map((s) => (
+                  <option key={s} value={s}>{s} saniye</option>
+                ))}
+              </select>
+              <button className="button button-secondary" type="submit">Güncelle</button>
+            </div>
+            <p className="subtitle">Süre dolarsa en mantıklı taş otomatik atılır.</p>
           </form>
         )}
 
