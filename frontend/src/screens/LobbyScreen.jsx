@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { fetchGames, fetchTables } from '../api/client';
 
-export default function LobbyScreen({ user, onLogout, onCreate, onJoin, error }) {
+export default function LobbyScreen({ user, onLogout, onCreate, onJoin, onOpenSettings, error }) {
   const [tables, setTables] = useState([]);
   const [loading, setLoading] = useState(true);
   const [games, setGames] = useState([]);
@@ -47,6 +47,7 @@ export default function LobbyScreen({ user, onLogout, onCreate, onJoin, error })
         <h1>🃏 Oyun Salonu</h1>
         <div className="topbar-right">
           <span>Merhaba, {user.name}</span>
+          <button className="icon-button" onClick={onOpenSettings} aria-label="Ayarlar">⚙️</button>
           <button className="button button-ghost" onClick={onLogout}>Çıkış yap</button>
         </div>
       </header>

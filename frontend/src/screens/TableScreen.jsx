@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { fetchGames } from '../api/client';
 
-export default function TableScreen({ room, user, onLeave, onKick, onChangePassword, onTransferHost, onRename, onChangeGameType, onStartGame, error }) {
+export default function TableScreen({ room, user, onLeave, onKick, onChangePassword, onTransferHost, onRename, onChangeGameType, onStartGame, onOpenSettings, error }) {
   const isHost = room.hostUserId === user.id;
   const isFull = room.players.length === room.maxPlayers;
   const [newPassword, setNewPassword] = useState('');
@@ -40,7 +40,10 @@ export default function TableScreen({ room, user, onLeave, onKick, onChangePassw
               {room.passwordProtected ? ' · 🔒 Şifreli' : ''}
             </p>
           </div>
-          <button className="button button-ghost" onClick={onLeave}>Masadan ayrıl</button>
+          <div className="topbar-right">
+            <button className="icon-button" onClick={onOpenSettings} aria-label="Ayarlar">⚙️</button>
+            <button className="button button-ghost" onClick={onLeave}>Masadan ayrıl</button>
+          </div>
         </div>
 
         {error && <p className="error-text">{error}</p>}

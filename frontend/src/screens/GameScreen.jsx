@@ -17,7 +17,7 @@ function sortByColorAndNumber(tiles) {
   });
 }
 
-export default function GameScreen({ game, room, user, onDraw, onDiscard, onFinishHand, onLeave, error }) {
+export default function GameScreen({ game, room, user, onDraw, onDiscard, onFinishHand, onLeave, onOpenSettings, error }) {
   const orderKey = `gamesaloon_hand_order_${room.code}`;
   const [handOrder, setHandOrder] = useState(() => {
     try {
@@ -127,7 +127,10 @@ export default function GameScreen({ game, room, user, onDraw, onDiscard, onFini
     <main className="screen game-screen">
       <div className="topbar">
         <h1>{room.name}</h1>
-        <button className="button button-ghost" onClick={onLeave}>Masadan ayrıl</button>
+        <div className="topbar-right">
+          <button className="icon-button" onClick={onOpenSettings} aria-label="Ayarlar">⚙️</button>
+          <button className="button button-ghost" onClick={onLeave}>Masadan ayrıl</button>
+        </div>
       </div>
 
       {error && <p className="error-text">{error}</p>}

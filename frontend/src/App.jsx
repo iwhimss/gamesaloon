@@ -6,6 +6,8 @@ import LobbyScreen from './screens/LobbyScreen';
 import TableScreen from './screens/TableScreen';
 import GameScreen from './screens/GameScreen';
 import HandEndScreen from './screens/HandEndScreen';
+import SettingsScreen from './screens/SettingsScreen';
+import { playDiscard, playDraw, playJoin, playLose, playTurn, playWin } from './audio/sounds';
 import './App.css';
 
 export default function App() {
@@ -18,7 +20,10 @@ export default function App() {
   const [game, setGame] = useState(null);
   const [handResult, setHandResult] = useState(null);
   const [error, setError] = useState('');
+  const [showSettings, setShowSettings] = useState(false);
   const socketRef = useRef(null);
+  const prevGameRef = useRef(null);
+  const prevPlayerCountRef = useRef(null);
 
   useEffect(() => {
     if (!user) return undefined;
@@ -34,6 +39,11 @@ export default function App() {
     });
     socket.on('connect_error', (err) => setError(err.message));
     socket.on('room:state', (state) => {
+      if (prevPlayerCountRef.current != null && state.players.length > prevPlayerCountRef.current) {
+        playJoin();
+      }
+      prevPlayerCountRef.current = state.players.length;
+
       setRoom(state);
       if (state.status !== 'oynanıyor') setGame(null);
     });
@@ -42,8 +52,21 @@ export default function App() {
       setGame(null);
       setError('Masadan çıkarıldınız');
     });
-    socket.on('game:state', (state) => setGame(state));
+    socket.on('game:state', (state) => {
+      const prev = prevGameRef.current;
+      if (prev && prev.currentPlayerId !== state.currentPlayerId && state.currentPlayerId === user.id) {
+        playTurn();
+      }
+      if (prev && state.discardCount > prev.discardCount && state.lastDiscardBy !== user.id) {
+        playDiscard();
+      }
+      prevGameRef.current = state;
+      setGame(state);
+    });
     socket.on('game:handEnded', (result) => {
+      if (result.winnerId === user.id) playWin();
+      else if (result.winnerId) playLose();
+      prevGameRef.current = null;
       setHandResult(result);
       setGame(null);
     });
@@ -51,6 +74,8 @@ export default function App() {
     return () => {
       socket.disconnect();
       socketRef.current = null;
+      prevGameRef.current = null;
+      prevPlayerCountRef.current = null;
     };
   }, [user]);
 
@@ -129,6 +154,7 @@ export default function App() {
     setError('');
     socketRef.current?.emit('game:action', { type: 'draw', payload: { source } }, (response) => {
       if (!response?.ok) setError(response?.error ?? 'İşlem başarısız');
+      else playDraw();
     });
   }
 
@@ -136,6 +162,7 @@ export default function App() {
     setError('');
     socketRef.current?.emit('game:action', { type: 'discard', payload: { tileId } }, (response) => {
       if (!response?.ok) setError(response?.error ?? 'İşlem başarısız');
+      else playDiscard();
     });
   }
 
@@ -165,6 +192,10 @@ export default function App() {
     );
   }
 
+  if (showSettings) {
+    return <SettingsScreen onClose={() => setShowSettings(false)} />;
+  }
+
   if (handResult && room) {
     return <HandEndScreen result={handResult} room={room} user={user} onContinue={dismissHandResult} />;
   }
@@ -179,6 +210,7 @@ export default function App() {
         onDiscard={handleDiscard}
         onFinishHand={handleFinishHand}
         onLeave={handleLeaveTable}
+        onOpenSettings={() => setShowSettings(true)}
         error={error}
       />
     );
@@ -196,6 +228,7 @@ export default function App() {
         onRename={handleRename}
         onChangeGameType={handleChangeGameType}
         onStartGame={handleStartGame}
+        onOpenSettings={() => setShowSettings(true)}
         error={error}
       />
     );
@@ -207,6 +240,7 @@ export default function App() {
       onLogout={handleLogout}
       onCreate={handleCreateTable}
       onJoin={handleJoinTable}
+      onOpenSettings={() => setShowSettings(true)}
       error={error}
     />
   );
