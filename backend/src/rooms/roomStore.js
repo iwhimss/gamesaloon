@@ -1,4 +1,5 @@
 import { redis } from '../db/redis.js';
+import { pool } from '../db/pool.js';
 
 const ROOM_TTL_SECONDS = 60 * 60 * 12;
 
@@ -17,6 +18,15 @@ export async function saveRoom(room) {
 
 export async function deleteRoom(code) {
   await redis.del(key(code));
+}
+
+export async function touchActivity(code) {
+  await pool.query('UPDATE tables SET last_activity_at = now() WHERE code = $1', [code]);
+}
+
+export async function closeRoom(code) {
+  await pool.query('UPDATE tables SET status = $1, closed_at = now() WHERE code = $2', ['kapandı', code]);
+  await deleteRoom(code);
 }
 
 export function createRoomState({ code, name, gameType, maxPlayers, hostUserId, hostName, passwordProtected }) {

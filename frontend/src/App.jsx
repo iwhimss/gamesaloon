@@ -52,6 +52,11 @@ export default function App() {
       setGame(null);
       setError('Masadan çıkarıldınız');
     });
+    socket.on('room:closed', () => {
+      setRoom(null);
+      setGame(null);
+      setError('Masa uzun süre hareketsiz kaldığı için kapatıldı');
+    });
     socket.on('game:state', (state) => {
       const prev = prevGameRef.current;
       if (prev && prev.currentPlayerId !== state.currentPlayerId && state.currentPlayerId === user.id) {

@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs';
 import { pool } from '../db/pool.js';
 import { getGameDefinition, isSupportedGameType } from '../games/registry.js';
 import { generateUniqueRoomCode } from './codeGenerator.js';
-import { createRoomState, deleteRoom, getRoom, publicRoomState, saveRoom } from './roomStore.js';
+import { closeRoom, createRoomState, getRoom, publicRoomState, saveRoom, touchActivity } from './roomStore.js';
 
 function fail(callback, message) {
   callback?.({ ok: false, error: message });
@@ -10,11 +10,6 @@ function fail(callback, message) {
 
 async function broadcastRoomState(io, room) {
   io.to(room.code).emit('room:state', publicRoomState(room));
-}
-
-async function closeTable(code) {
-  await pool.query('UPDATE tables SET status = $1, closed_at = now() WHERE code = $2', ['kapandı', code]);
-  await deleteRoom(code);
 }
 
 export function registerRoomHandlers(io, socket) {
@@ -95,6 +90,7 @@ export function registerRoomHandlers(io, socket) {
         [normalizedCode, user.sub, seatNo],
       );
       await saveRoom(room);
+      await touchActivity(normalizedCode);
 
       socket.data.currentRoom = normalizedCode;
       socket.join(normalizedCode);
@@ -126,7 +122,7 @@ export function registerRoomHandlers(io, socket) {
       );
 
       if (room.players.length === 0) {
-        await closeTable(code);
+        await closeRoom(code);
         return;
       }
 

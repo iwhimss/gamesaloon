@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { pool } from '../db/pool.js';
 import { getGameDefinition, isSupportedGameType } from '../games/registry.js';
-import { getRoom, publicRoomState, saveRoom } from './roomStore.js';
+import { getRoom, publicRoomState, saveRoom, touchActivity } from './roomStore.js';
 
 function fail(callback, message) {
   callback?.({ ok: false, error: message });
@@ -37,6 +37,7 @@ export function registerHostHandlers(io, socket) {
         [targetUserId, room.code],
       );
       await saveRoom(room);
+      await touchActivity(room.code);
 
       const targetSocket = [...io.sockets.sockets.values()].find(
         (s) => s.data.user?.sub === targetUserId && s.data.currentRoom === room.code,
@@ -67,6 +68,7 @@ export function registerHostHandlers(io, socket) {
 
       room.passwordProtected = Boolean(passwordHash);
       await saveRoom(room);
+      await touchActivity(room.code);
 
       callback?.({ ok: true });
       await broadcastRoomState(io, room);
@@ -87,6 +89,7 @@ export function registerHostHandlers(io, socket) {
 
       room.name = tableName;
       await saveRoom(room);
+      await touchActivity(room.code);
 
       callback?.({ ok: true });
       await broadcastRoomState(io, room);
@@ -118,6 +121,7 @@ export function registerHostHandlers(io, socket) {
       room.gameType = gameType;
       room.maxPlayers = definition.maxPlayers;
       await saveRoom(room);
+      await touchActivity(room.code);
 
       callback?.({ ok: true });
       await broadcastRoomState(io, room);
@@ -139,6 +143,7 @@ export function registerHostHandlers(io, socket) {
       room.hostUserId = targetUserId;
       await pool.query('UPDATE tables SET host_user_id = $1 WHERE code = $2', [targetUserId, room.code]);
       await saveRoom(room);
+      await touchActivity(room.code);
 
       callback?.({ ok: true });
       await broadcastRoomState(io, room);

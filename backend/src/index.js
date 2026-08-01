@@ -8,6 +8,7 @@ import { guestRouter } from './routes/guest.js';
 import { tablesRouter } from './routes/tables.js';
 import { gamesRouter } from './routes/games.js';
 import { registerSockets } from './sockets/index.js';
+import { startIdleSweeper } from './rooms/idleSweeper.js';
 
 process.on('unhandledRejection', (err) => {
   console.error('[unhandledRejection]', err);
@@ -24,6 +25,7 @@ app.use(gamesRouter);
 const httpServer = http.createServer(app);
 const io = new Server(httpServer, { cors: { origin: '*' } });
 registerSockets(io);
+startIdleSweeper(io);
 
 httpServer.listen(config.port, () => {
   console.log(`[backend] http://localhost:${config.port} (${config.nodeEnv})`);
