@@ -1,11 +1,56 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { DndContext, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { SortableContext, arrayMove, horizontalListSortingStrategy } from '@dnd-kit/sortable';
 import Tile from '../components/Tile';
+import DraggableTile from '../components/DraggableTile';
+import DragSourceTile from '../components/DragSourceTile';
+import DropZone from '../components/DropZone';
 import Mascot from '../components/Mascot';
 import PlayerSeat from '../components/PlayerSeat';
 import { assignSeats } from '../lib/seatLayout';
 
+function sortByColorAndNumber(tiles) {
+  return [...tiles].sort((a, b) => {
+    if (a.isFakeOkey || b.isFakeOkey) return (a.isFakeOkey ? 1 : 0) - (b.isFakeOkey ? 1 : 0);
+    if (a.color !== b.color) return a.color.localeCompare(b.color);
+    return a.number - b.number;
+  });
+}
+
 export default function GameScreen({ game, room, user, onDraw, onDiscard, onFinishHand, onLeave, error }) {
-  const [selectedTileId, setSelectedTileId] = useState(null);
+  const orderKey = `gamesaloon_hand_order_${room.code}`;
+  const [handOrder, setHandOrder] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem(orderKey)) ?? [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    setHandOrder((prev) => {
+      const currentIds = game.hand.map((t) => t.id);
+
+      let next;
+      if (prev.length === 0) {
+        next = sortByColorAndNumber(game.hand).map((t) => t.id);
+      } else {
+        const currentIdSet = new Set(currentIds);
+        const kept = prev.filter((id) => currentIdSet.has(id));
+        const additions = currentIds.filter((id) => !kept.includes(id));
+        next = [...kept, ...additions];
+      }
+
+      localStorage.setItem(orderKey, JSON.stringify(next));
+      return next;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [game.hand, orderKey]);
+
+  const orderedHand = useMemo(() => {
+    const byId = Object.fromEntries(game.hand.map((t) => [t.id, t]));
+    return handOrder.map((id) => byId[id]).filter(Boolean);
+  }, [handOrder, game.hand]);
 
   const nameByUserId = useMemo(() => {
     const map = {};
@@ -24,21 +69,47 @@ export default function GameScreen({ game, room, user, onDraw, onDiscard, onFini
   const canDraw = isMyTurn && game.turnPhase === 'draw';
   const canDiscardOrFinish = isMyTurn && game.turnPhase === 'discard';
 
-  const sortedHand = [...game.hand].sort((a, b) => {
-    if (a.isFakeOkey || b.isFakeOkey) return (a.isFakeOkey ? 1 : 0) - (b.isFakeOkey ? 1 : 0);
-    if (a.color !== b.color) return a.color.localeCompare(b.color);
-    return a.number - b.number;
-  });
-
-  function handleDiscard() {
-    if (!selectedTileId) return;
-    onDiscard(selectedTileId);
-    setSelectedTileId(null);
-  }
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
   function discardTileFor(seatPlayer) {
     if (!seatPlayer || !game.topDiscard || game.lastDiscardBy !== seatPlayer.userId) return null;
     return game.topDiscard;
+  }
+
+  function handleDragEnd({ active, over }) {
+    if (!over) return;
+
+    // Istaka bir SortableContext içerdiği için elin üstüne bırakılan bir taş,
+    // "hand-zone" yerine altındaki taşın id'sini döndürebilir — ikisini de kabul et.
+    const isOverHand = over.id === 'hand-zone' || handOrder.includes(over.id);
+
+    if (active.id === 'source-pile' && isOverHand && canDraw) {
+      onDraw('pile');
+      return;
+    }
+
+    if (active.id === 'source-discard' && isOverHand && canDraw && game.topDiscard) {
+      onDraw('discard');
+      return;
+    }
+
+    const isHandTile = handOrder.includes(active.id);
+
+    if (isHandTile && over.id === 'discard-zone' && canDiscardOrFinish) {
+      onDiscard(active.id);
+      return;
+    }
+
+    if (isHandTile && active.id !== over.id && handOrder.includes(over.id)) {
+      setHandOrder((prev) => {
+        const oldIndex = prev.indexOf(active.id);
+        const newIndex = prev.indexOf(over.id);
+        if (oldIndex === -1 || newIndex === -1) return prev;
+        const next = arrayMove(prev, oldIndex, newIndex);
+        localStorage.setItem(orderKey, JSON.stringify(next));
+        return next;
+      });
+    }
   }
 
   if (game.status === 'bitti') {
@@ -61,79 +132,84 @@ export default function GameScreen({ game, room, user, onDraw, onDiscard, onFini
 
       {error && <p className="error-text">{error}</p>}
 
-      <div className="table-scene">
-        <div className="seat seat-top">
-          <PlayerSeat player={seats.top} isTurn={game.currentPlayerId === seats.top?.userId} discardTile={discardTileFor(seats.top)} />
-        </div>
-        <div className="seat seat-left">
-          <PlayerSeat player={seats.left} isTurn={game.currentPlayerId === seats.left?.userId} discardTile={discardTileFor(seats.left)} />
-        </div>
-        <div className="seat seat-right">
-          <PlayerSeat player={seats.right} isTurn={game.currentPlayerId === seats.right?.userId} discardTile={discardTileFor(seats.right)} />
-        </div>
+      <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+        <div className="table-scene">
+          <div className="seat seat-top">
+            <PlayerSeat player={seats.top} isTurn={game.currentPlayerId === seats.top?.userId} discardTile={discardTileFor(seats.top)} />
+          </div>
+          <div className="seat seat-left">
+            <PlayerSeat player={seats.left} isTurn={game.currentPlayerId === seats.left?.userId} discardTile={discardTileFor(seats.left)} />
+          </div>
+          <div className="seat seat-right">
+            <PlayerSeat player={seats.right} isTurn={game.currentPlayerId === seats.right?.userId} discardTile={discardTileFor(seats.right)} />
+          </div>
 
-        <div className="round-table">
-          <div className="table-center">
-            <div className="table-center-tiles">
-              <div className="table-center-tile">
-                <span className="field-label">Gösterge</span>
-                <Tile tile={game.indicatorTile} />
+          <div className="round-table">
+            <div className="table-center">
+              <div className="table-center-tiles">
+                <div className="table-center-tile">
+                  <span className="field-label">Gösterge</span>
+                  <Tile tile={game.indicatorTile} />
+                </div>
+                <div className="table-center-tile">
+                  <span className="field-label">Okey</span>
+                  <Tile tile={game.okeyTile} />
+                </div>
+                <DragSourceTile
+                  id="source-pile"
+                  tile={{}}
+                  faceDown
+                  disabled={!canDraw || game.drawPileCount === 0}
+                  label="Yığın"
+                />
+                <DragSourceTile
+                  id="source-discard"
+                  tile={game.topDiscard}
+                  disabled={!canDraw || !game.topDiscard}
+                  label="Atılan"
+                />
               </div>
-              <div className="table-center-tile">
-                <span className="field-label">Okey</span>
-                <Tile tile={game.okeyTile} />
-              </div>
+              <p className="table-center-count">{game.drawPileCount} taş kaldı</p>
             </div>
-            <p className="table-center-count">{game.drawPileCount} taş kaldı</p>
           </div>
         </div>
-      </div>
 
-      <section className="card own-area">
-        <div className="own-area-header">
-          <Mascot userId={user.id} name={user.name} isTurn={isMyTurn} size={48} />
-          {isMyTurn ? (
-            <span className="badge">Sıra sende</span>
-          ) : (
-            <span className="subtitle">Sıra {nameByUserId[game.currentPlayerId] ?? 'diğer oyuncuda'}.</span>
+        <section className="card own-area">
+          <div className="own-area-header">
+            <Mascot userId={user.id} name={user.name} isTurn={isMyTurn} size={48} />
+            {isMyTurn ? (
+              <span className="badge">Sıra sende</span>
+            ) : (
+              <span className="subtitle">Sıra {nameByUserId[game.currentPlayerId] ?? 'diğer oyuncuda'}.</span>
+            )}
+          </div>
+
+          {canDraw && (
+            <p className="subtitle">Yığından veya atılan taştan ıstakana sürükleyerek çek.</p>
           )}
-        </div>
 
-        {canDraw && (
-          <div className="stack-row">
-            <button className="button button-primary" onClick={() => onDraw('pile')}>Yığından çek</button>
-            <button
-              className="button button-secondary"
-              onClick={() => onDraw('discard')}
-              disabled={!game.topDiscard}
-            >
-              Atılandan çek
-            </button>
-          </div>
-        )}
+          <DropZone id="hand-zone" active={canDraw} className="hand">
+            <SortableContext items={handOrder} strategy={horizontalListSortingStrategy}>
+              {orderedHand.map((tile) => (
+                <DraggableTile key={tile.id} tile={tile} />
+              ))}
+            </SortableContext>
+          </DropZone>
 
-        <div className="hand">
-          {sortedHand.map((tile) => (
-            <Tile
-              key={tile.id}
-              tile={tile}
-              selected={selectedTileId === tile.id}
-              onClick={canDiscardOrFinish ? () => setSelectedTileId(tile.id === selectedTileId ? null : tile.id) : undefined}
-            />
-          ))}
-        </div>
-
-        {canDiscardOrFinish && (
-          <div className="stack-row">
-            <button className="button button-primary" onClick={handleDiscard} disabled={!selectedTileId}>
-              Seçili taşı at
-            </button>
-            <button className="button button-secondary" onClick={onFinishHand}>
-              Elimi bitir
-            </button>
-          </div>
-        )}
-      </section>
+          {canDiscardOrFinish && (
+            <>
+              <DropZone id="discard-zone" active className="discard-dropzone">
+                <span>Taşı atmak için buraya sürükle</span>
+              </DropZone>
+              <div className="stack-row">
+                <button className="button button-secondary" onClick={onFinishHand}>
+                  Elimi bitir
+                </button>
+              </div>
+            </>
+          )}
+        </section>
+      </DndContext>
     </main>
   );
 }

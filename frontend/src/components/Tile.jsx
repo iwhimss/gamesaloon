@@ -5,7 +5,7 @@ const COLOR_STYLES = {
   siyah: '#111827',
 };
 
-export default function Tile({ tile, selected, onClick, faceDown }) {
+export default function Tile({ tile, faceDown }) {
   if (faceDown) {
     return <div className="tile tile-facedown" aria-hidden="true" />;
   }
@@ -13,14 +13,8 @@ export default function Tile({ tile, selected, onClick, faceDown }) {
   const isJoker = tile.isFakeOkey;
 
   return (
-    <button
-      type="button"
-      className={`tile${selected ? ' tile-selected' : ''}`}
-      style={{ color: isJoker ? '#7c3aed' : COLOR_STYLES[tile.color] }}
-      onClick={onClick}
-      disabled={!onClick}
-    >
+    <div className="tile" style={{ color: isJoker ? '#7c3aed' : COLOR_STYLES[tile.color] }}>
       {isJoker ? '★' : tile.number}
-    </button>
+    </div>
   );
 }
