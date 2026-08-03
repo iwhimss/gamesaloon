@@ -17,7 +17,9 @@ function sortByColorAndNumber(tiles) {
   });
 }
 
-export default function GameScreen({ game, room, user, onDraw, onDiscard, onFinishHand, onLeave, onOpenSettings, error }) {
+const EMOJI_OPTIONS = ['👍', '😂', '😮', '😡', '❤️', '🎉'];
+
+export default function GameScreen({ game, room, user, onDraw, onDiscard, onFinishHand, onLeave, onOpenSettings, onSendEmoji, activeEmojis, error }) {
   const orderKey = `gamesaloon_hand_order_${room.code}`;
   const [handOrder, setHandOrder] = useState(() => {
     try {
@@ -155,13 +157,13 @@ export default function GameScreen({ game, room, user, onDraw, onDiscard, onFini
       <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
         <div className="table-scene">
           <div className="seat seat-top">
-            <PlayerSeat player={seats.top} isTurn={game.currentPlayerId === seats.top?.userId} discardTile={discardTileFor(seats.top)} />
+            <PlayerSeat player={seats.top} isTurn={game.currentPlayerId === seats.top?.userId} discardTile={discardTileFor(seats.top)} emoji={activeEmojis?.[seats.top?.userId]?.emoji} />
           </div>
           <div className="seat seat-left">
-            <PlayerSeat player={seats.left} isTurn={game.currentPlayerId === seats.left?.userId} discardTile={discardTileFor(seats.left)} />
+            <PlayerSeat player={seats.left} isTurn={game.currentPlayerId === seats.left?.userId} discardTile={discardTileFor(seats.left)} emoji={activeEmojis?.[seats.left?.userId]?.emoji} />
           </div>
           <div className="seat seat-right">
-            <PlayerSeat player={seats.right} isTurn={game.currentPlayerId === seats.right?.userId} discardTile={discardTileFor(seats.right)} />
+            <PlayerSeat player={seats.right} isTurn={game.currentPlayerId === seats.right?.userId} discardTile={discardTileFor(seats.right)} emoji={activeEmojis?.[seats.right?.userId]?.emoji} />
           </div>
 
           <div className="round-table">
@@ -196,7 +198,7 @@ export default function GameScreen({ game, room, user, onDraw, onDiscard, onFini
 
         <section className="card own-area">
           <div className="own-area-header">
-            <Mascot userId={user.id} name={user.name} isTurn={isMyTurn} size={48} />
+            <Mascot userId={user.id} name={user.name} isTurn={isMyTurn} size={48} emoji={activeEmojis?.[user.id]?.emoji} />
             {isMyTurn ? (
               <span className="badge">Sıra sende</span>
             ) : (
@@ -207,6 +209,19 @@ export default function GameScreen({ game, room, user, onDraw, onDiscard, onFini
                 ⏱ {remainingSeconds}s
               </span>
             )}
+            <div className="emoji-picker">
+              {EMOJI_OPTIONS.map((emoji) => (
+                <button
+                  key={emoji}
+                  type="button"
+                  className="emoji-picker-button"
+                  onClick={() => onSendEmoji(emoji)}
+                  aria-label={`${emoji} gönder`}
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
           </div>
 
           {canDraw && (

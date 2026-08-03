@@ -21,6 +21,7 @@ export default function App() {
   const [handResult, setHandResult] = useState(null);
   const [error, setError] = useState('');
   const [showSettings, setShowSettings] = useState(false);
+  const [activeEmojis, setActiveEmojis] = useState({});
   const socketRef = useRef(null);
   const prevGameRef = useRef(null);
   const prevPlayerCountRef = useRef(null);
@@ -67,6 +68,13 @@ export default function App() {
       }
       prevGameRef.current = state;
       setGame(state);
+    });
+    socket.on('chat:emoji', ({ userId, emoji }) => {
+      const sentAt = Date.now();
+      setActiveEmojis((prev) => ({ ...prev, [userId]: { emoji, sentAt } }));
+      setTimeout(() => {
+        setActiveEmojis((prev) => (prev[userId]?.sentAt === sentAt ? { ...prev, [userId]: undefined } : prev));
+      }, 2600);
     });
     socket.on('game:handEnded', (result) => {
       if (result.winnerId === user.id) playWin();
@@ -186,6 +194,13 @@ export default function App() {
     setHandResult(null);
   }
 
+  function handleSendEmoji(emoji) {
+    setError('');
+    socketRef.current?.emit('chat:emoji', { emoji }, (response) => {
+      if (!response?.ok) setError(response?.error ?? 'Emoji gönderilemedi');
+    });
+  }
+
   if (!user) {
     return <LoginScreen onLogin={handleLogin} error={error} />;
   }
@@ -220,6 +235,8 @@ export default function App() {
         onFinishHand={handleFinishHand}
         onLeave={handleLeaveTable}
         onOpenSettings={() => setShowSettings(true)}
+        onSendEmoji={handleSendEmoji}
+        activeEmojis={activeEmojis}
         error={error}
       />
     );
