@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.0.1 — Yenilikler & Oyun Hissi
+
+- Odalara isim verme; masa listesinde, masa/oyun ekranlarında gösterim; host yeniden adlandırabilir.
+- Oyun seçimi altyapısı: masa kurulurken oyun tipi seçilir (`games/registry.js`, ileride yeni oyunlar eklenebilir), host oyun tipini sonradan değiştirebilir.
+- Round-table görsel yeniden tasarım: yuvarlak masa, kod ile çizilmiş SVG maskot karakterler, oyuncuların masa etrafına dizilimi, gösterge/okey masa ortasında, atılan taşlar oyuncunun koltuğunda.
+- Sürükle-bırak: taş çekme (yığın/atılan taştan ıstakaya), atma (ıstakadan atılan taş alanına) ve ıstaka içinde yeniden dizme — mobil dokunmatik destekli (`@dnd-kit`), eski tıkla-seç akışı kaldırıldı.
+- Ses efektleri (Web Audio, sentetik) ve ayarlar sayfası (ses aç/kapa, seviye).
+- Boşta kalan odaların otomatik kapanması (15 dakika hareketsizlik).
+- Hamle süresi: host 20/30/45/60 saniye seçer, süre dolunca otomatik çekme + sezgisel "en mantıklı taş" atma.
+- Emoji chat: maskot karakterin üzerinde beliren emoji balonu.
+- Tasarım düzeltmeleri: düşük kontrastlı yazı renkleri giderildi, oyun ekranı daha "oyun gibi" bir görsel dil aldı.
+
 ## v1.0.0 — Tam Okey Deneyimi
 
 - Lobi ve masa (oda) sistemi: kod + opsiyonel şifreli masa kurma/katılma, açık masa listesi.

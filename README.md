@@ -7,12 +7,19 @@ Tarayıcı üzerinden çok oyunculu masa/parti oyunları platformu. Kullanıcıl
 Detaylı proje planı için: [`oyun-platformu-proje-plani.md`](oyun-platformu-proje-plani.md)
 Sürüm bazlı ilerleme planları için: [`.plan/`](.plan) klasörü.
 
-## Özellikler (v1.0.0)
+## Özellikler (v1.0.1)
 
 - Misafir modu ile giriş (isim gir, oyna)
-- Lobi: açık masaları listeleme, kod + opsiyonel şifre ile masa kurma/katılma
-- Host yetkileri: oyuncu atma, şifre değiştirme, hostluk devri, host ayrılırsa otomatik devir
+- Lobi: açık masaları listeleme, kod + opsiyonel şifre ile masa kurma/katılma, masa adı verme
+- Oyun seçimi altyapısı: masa kurulurken oyun tipi seçilir, host sonradan değiştirebilir (şu an sadece Okey, mimari genişletilebilir)
+- Host yetkileri: oyuncu atma, şifre değiştirme, hostluk devri, host ayrılırsa otomatik devir, masa yeniden adlandırma, hamle süresi/oyun tipi ayarı
+- Round-table görsel tasarım: yuvarlak masa, SVG maskot karakterler, oyuncuların masa etrafına dizilimi
 - Okey oyun motoru: 106 taş, gösterge/okey taşı, sırayla çekme/atma, el bitirme (çift veya set/run), temel puanlama
+- Sürükle-bırak: taş çekme/atma ve ıstakada yeniden dizme (mobil dokunmatik destekli)
+- Ses efektleri (Web Audio, sentetik) ve ayarlar sayfası
+- Emoji chat: maskot karakterin üzerinde beliren emoji balonu
+- Hamle süresi + süre dolunca otomatik ("en mantıklı") taş atma
+- Boşta kalan odaların otomatik kapanması (15 dakika hareketsizlik)
 - Oturum boyunca kalıcı skor tablosu, el sonu ekranı
 - PWA: ana ekrana eklenebilir, temel offline sayfası
 - Sade, erişilebilir arayüz (büyük yazı tipi, yüksek kontrast, net dokunma alanları)
@@ -81,14 +88,17 @@ npm run migrate up
 
 ```
 backend/
-  src/rooms/    Lobi, masa, host yetkileri (socket + Redis state)
+  src/rooms/    Lobi, masa, host yetkileri, oyun/hamle zamanlayıcı, emoji chat (socket + Redis state)
+  src/games/registry.js  Desteklenen oyun tipleri listesi
   src/games/okey/  Okey kural motoru (saf fonksiyonlar) ve socket entegrasyonu
-  src/routes/   REST endpoint'leri (health, guest-login, tables)
+  src/routes/   REST endpoint'leri (health, guest-login, tables, games)
   src/db/       PostgreSQL pool, Redis client
   migrations/   node-pg-migrate şema dosyaları
 frontend/
-  src/screens/  Login, Lobby, Table, Game, HandEnd ekranları
-  src/components/  Tile (okey taşı) bileşeni
+  src/screens/  Login, Lobby, Table, Game, HandEnd, Settings ekranları
+  src/components/  Tile, Mascot, PlayerSeat, sürükle-bırak bileşenleri (Draggable/DragSource/DropZone)
+  src/audio/    Web Audio tabanlı sentetik ses efektleri
+  src/lib/      Koltuk yerleşimi (seatLayout), ayarlar (localStorage)
   public/       manifest.json, service worker, ikonlar (PWA)
 deploy/         Prodüksiyon deploy hazırlık dosyaları (nginx, .env örneği, adımlar)
 .plan/          Sürüm bazlı fazlı geliştirme planları ve ilerleme notları
@@ -96,8 +106,9 @@ deploy/         Prodüksiyon deploy hazırlık dosyaları (nginx, .env örneği,
 
 ## Sürüm
 
-Güncel sürüm: **1.0.0** — tam Okey oyun deneyimi (lobi, host, oyun motoru,
-puan sistemi, PWA, erişilebilir tasarım). Detaylar için [`CHANGELOG.md`](CHANGELOG.md).
+Güncel sürüm: **1.0.1** — oyun hissi veren görsel tasarım (round-table,
+maskotlar), sürükle-bırak, oda/oyun ayarları, ses efektleri, emoji chat,
+hamle süresi ve otomatik oda kapanma. Detaylar için [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Prodüksiyon Deploy
 

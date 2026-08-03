@@ -1,6 +1,6 @@
 {
   "name": "gamesaloon",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "Tarayıcı üzerinden çok oyunculu masa/parti oyunları platformu (ilk hedef: Okey).",
   "workspaces": [
